@@ -35,7 +35,7 @@ for key in lrp:
     address = ip+":"+str(port)
     #address comes from LRP
     app_guid = key["instance"]["process_guid"][:36]
-    bashCommand = "cf curl /v2/gorouters/"+app_guid+"/stats"
+    bashCommand = "cf curl /v2/apps/"+app_guid+"/stats"
     #cf curl /v2/apps/<guid>/stats, uri here comes from LRP
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
