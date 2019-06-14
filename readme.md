@@ -1,4 +1,4 @@
-##NOTE: This Script is an alpha version, please use it at your own risk.
+## NOTE: This Script is an alpha version, please use it at your own risk.
 
 This is a simple script to check whether there are stale routes in PCF/gorouter.
 
