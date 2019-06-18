@@ -1,0 +1,83 @@
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
+- name: bosh-cli
+  type: docker-image
+  source:
+    repository: orangecloudfoundry/orange-cf-bosh-cli
+    tag: latest
+
+resources:
+- name: slack-alert
+  type: slack-notification
+  source:
+    url: ((slack_webhook))
+- name: stale-route-check
+  type: git
+  source:
+    uri: https://github.com/daichi703n/stale-route-check
+    branch: master
+
+params:
+  slack_on_failure_params: &SLACK_FAILURE
+    channel: ((slack_channel))
+    # text: |
+    #   :x: *$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME* Stale route found <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_NAME>! @here
+    text_file: |
+      stale-route-check/result.log
+  slack_on_success_params: &SLACK_SUCCESS
+    channel: ((slack_channel))
+    text: |
+      :heavy_check_mark: *$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME* No stale route found <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_NAME>!
+  bosh_director_prams: &BOSH_DIRECTOR_PARAMS
+    BOSH_CLIENT: ((bosh_client))
+    BOSH_CLIENT_SECRET: ((bosh_client_secret))
+    BOSH_CA_CERT: ((bosh_ca_cert))
+    BOSH_ENVIRONMENT: ((bosh_environment))
+    DEPLOYMENT_NAME: ((deployment_name))
+    ROUTER_INSTANCE_NUM: ((router_instance_num))
+    API_ENDPOINT: ((api_endpoint))
+    CF_ADMIN_USERNAME: ((cf_admin_username))
+    CF_ADMIN_PASSWORD: ((cf_admin_password))
+
+# inputs:
+# - name: xxx
+
+jobs:
+- name: stale-route-check
+  plan:
+  - aggregate:
+    - get: stale-route-check
+      trigger: true
+  - task: check
+    params:
+      <<: *BOSH_DIRECTOR_PARAMS
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          #repository: bosh/cli2
+          repository: orangecloudfoundry/orange-cf-bosh-cli
+      inputs:
+      - name: stale-route-check
+      outputs:
+      - name: stale-route-check
+      run:
+        path: sh
+        args:
+        - -c
+        - |
+          cd stale-route-check
+          sh ./check_routes.sh
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
+    on_success:
+      put: slack-alert
+      params:
+        <<: *SLACK_SUCCESS
