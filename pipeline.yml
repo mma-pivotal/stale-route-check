@@ -20,6 +20,9 @@ resources:
   source:
     uri: https://github.com/daichi703n/stale-route-check
     branch: master
+- name: schedule
+  type: time
+  source: {interval: 5m}
 
 params:
   slack_on_failure_params: &SLACK_FAILURE
@@ -50,6 +53,8 @@ jobs:
 - name: stale-route-check
   plan:
   - aggregate:
+    - get: schedule
+      trigger: true
     - get: stale-route-check
       trigger: true
   - task: check
@@ -77,7 +82,7 @@ jobs:
       put: slack-alert
       params:
         <<: *SLACK_FAILURE
-    on_success:
-      put: slack-alert
-      params:
-        <<: *SLACK_SUCCESS
+    # on_success:
+    #   put: slack-alert
+    #   params:
+    #     <<: *SLACK_SUCCESS
