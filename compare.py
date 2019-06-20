@@ -1,9 +1,9 @@
+import os
 import json
 import re
 import subprocess
 
-#Please replace the credentials here, make sure you can cf login with the correct credentails
-bashCommand= "cf login -a <api_endpoint> -u <admin> -p <pass> -o system -s system --skip-ssl-validation"
+bashCommand= "cf login -a "+os.environ['API_ENDPOINT']+" -u "+os.environ['CF_ADMIN_USERNAME']+" -p "+os.environ['CF_ADMIN_PASSWORD']+" -o system -s system --skip-ssl-validation"
 process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 output, error = process.communicate()
 
